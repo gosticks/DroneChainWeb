@@ -1,12 +1,20 @@
+import DroneList from '../components/Views/DroneList'
+import DroneOverview from '../components/Views/DroneOverview'
+import NotFound from '../components/GeneralViews/NotFoundPage'
+
 const routes = [
-  // {
-  //   path: '/',
-  //   component: COMPONENT_NAME,
-  //   redirect: OPTIONAL_REDIRECT
-  //   children: [OPTINAL_CHILDREN]
-  // },
-  // Not Found example
-  // { path: '*', component: NotFound }
+  {
+    path: '/',
+    component: DroneList
+  },
+  {
+    path: '/drone/:id',
+    component: DroneOverview
+  },
+  {
+    path: '*',
+    component: NotFound
+  }
 ]
 
 /**

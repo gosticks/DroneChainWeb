@@ -13,8 +13,14 @@ import routes from './routes/routes'
 // library imports
 import './assets/sass/main.scss'
 import 'es6-promise/auto'
+import mapboxgl from 'mapbox-gl'
+import Mapbox from 'mapbox-gl-vue'
+// import PortalVue from 'portal-vue'
+
+window.mapboxgl = mapboxgl
 
 // plugin setup
+// Vue.use(PortalVue)
 Vue.use(VueRouter)
 Vue.use(Vuex)
 Vue.use(GlobalComponents)
@@ -26,9 +32,22 @@ const router = new VueRouter({
   linkActiveClass: 'active'
 })
 
+const eventBus = new Vue()
+// Add to Vue properties by exposing a getter for $bus
+Object.defineProperties(Vue.prototype, {
+  $bus: {
+    get: function () {
+      return eventBus
+    }
+  }
+})
+
 /* eslint-disable no-new */
 new Vue({
   el: '#app',
   render: h => h(App),
+  components: {
+    'mapbox': Mapbox
+  },
   router
 })
