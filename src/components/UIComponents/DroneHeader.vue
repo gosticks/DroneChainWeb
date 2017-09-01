@@ -1,15 +1,15 @@
 <template>
   <div class="header container">
-      <div class="nav-bar branding">
+      <div class="nav-bar">
         <div class="left">
           <ul>
-            <li><div class="center">BRANDNAMEO</div></li>
+            <li><div class="left"><img src="static/img/TextLogo.svg" style="max-height: 100%; width: 150px;"/></div></li>
           </ul>
         </div>
         
         <div class="right">
           <ul>
-            <li  class="cart-button"><i class="ion-navicon-round"></i></li>
+            <li  class="cart-button" style="padding-top: 7px;"><i class="ion-navicon-round"></i></li>
           </ul>
         </div>
       </div>
@@ -39,7 +39,7 @@ export default {
   .nav-bar {
     padding: 7px 0px;
     height: $nav-bar-height;
-    border-bottom: 2px solid #333;
+    border-bottom: 2px solid #EEF;
     //line-height: $nav-bar-height;
     -webkit-touch-callout: none; /* iOS Safari */
     -webkit-user-select: none; /* Safari */
@@ -108,8 +108,8 @@ export default {
     width: 100%;
 
     .table-button {
-      top: 3px;
-      padding: 5px;
+      top: 0px;
+      padding: 0px;
     }
 
     i {

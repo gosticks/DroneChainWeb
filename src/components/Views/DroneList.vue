@@ -6,7 +6,7 @@
 
 <script>
 import DroneTable from '../UIComponents/DroneTable'
-import Data from '../../dataProvider'
+import {Data} from '../../dataProvider'
 
 export default {
   components: {
@@ -33,6 +33,6 @@ export default {
 }
 </script>
 
-<style>
+<style lang="scss">
 
 </style>

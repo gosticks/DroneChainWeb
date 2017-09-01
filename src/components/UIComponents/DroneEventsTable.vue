@@ -7,7 +7,7 @@
     <div v-else>
       <table class="events-list-table">
         <tbody>
-          <tr v-for="row in data"><td>{{row}}</td></tr>
+          <tr v-for="event in data"><td>{{event.desc}} <small style="float:right;"> {{event.time}}</small></td></tr>
         </tbody>
       </table>
     </div>

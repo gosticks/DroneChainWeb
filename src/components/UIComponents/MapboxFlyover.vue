@@ -5,6 +5,7 @@
 </template>
 
 <script>
+import {FakeData} from '../../dataProvider'
 import mapboxgl from 'mapbox-gl'
 import Mapbox from 'mapbox-gl-vue'
 import * as turf from '@turf/turf'
@@ -13,6 +14,16 @@ export default {
     Mapbox
   },
   props: {
+    prepopulate: {
+      required: false,
+      default: 0,
+      type: Boolean
+    },
+    radius: {
+      required: false,
+      default: 0,
+      type: Number
+    },
     mapStyle: {
       required: false,
       default: 'streets',
@@ -35,16 +46,21 @@ export default {
   methods: {
     addTarget: function (position) {
       this.target = position
-      this.map.fitBounds([this.origin, position])
       this.setup()
     },
 
     mapLoaded: function (map) {
       this.map = map
-      this.drawDrone()
+      if (this.prepopulate) {
+        this.drawRoute(FakeData.route)
+        this.drawPoints(FakeData.points)
+      }
       // console.debug('Center at origin since no destination.')
       if (this.destination.length === 2) {
         this.target = this.destination
+      }
+      if (this.radius > 0) {
+        this.drawRadius(this.radius)
       }
       if (this.target) {
         this.setup()
@@ -52,7 +68,30 @@ export default {
       } else {
         this.map.flyTo({center: this.origin, zoom: 13})
       }
+      this.drawDrone()
     },
+
+    removeRadius: function () {
+      // Remove drone power radius.
+      this.map.removeLayer('power_circle')
+    },
+
+    drawRadius: function (distance) {
+      console.debug('Drawing circle radius')
+      this.map.addSource('power_circle', this.createGeoJSONCircle(this.origin, distance))
+
+      this.map.addLayer({
+        'id': 'power_circle',
+        'type': 'fill',
+        'source': 'power_circle',
+        'layout': {},
+        'paint': {
+          'fill-color': 'green',
+          'fill-opacity': 0.2
+        }
+      })
+    },
+
     resetMap: function () {
       this.map.removeSource('route')
       this.map.removeSource('point')
@@ -61,7 +100,7 @@ export default {
     },
     setup: function () {
       this.route = this.processRoute()
-      this.map.fitBounds([this.origin, this.target])
+      console.debug('Updating Map for target', this.target)
       if (this.map.getSource('route')) {
         this.map.removeSource('route')
       }
@@ -76,12 +115,88 @@ export default {
         'source': 'route',
         'type': 'line',
         'paint': {
-          'line-width': 2,
-          'line-color': '#007cbf'
+          'line-color': '#e74c3c',
+          'line-dasharray': [2.0, 1.0],
+          'line-width': {
+            'base': 3.0,
+            'stops': [[15, 3.0], [20, 3.0]]
+          }
         }
       })
-
       this.fitBounds()
+    },
+
+    drawPoints (geojson) {
+      if (this.map.getLayer('points')) {
+        this.getLayer('points').setSource('geojson')
+        return
+      }
+      console.warn('Drawing points', geojson)
+      this.map.addLayer({
+        'id': 'points_array',
+        'type': 'symbol',
+        'source': geojson,
+        'layout': {
+          'icon-image': '{icon}-15',
+          'text-field': '{title}',
+          'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
+          'text-offset': [0, 0.6],
+          'text-anchor': 'top'
+        }
+      })
+    },
+
+    createGeoJSONCircle (center, radiusInKm, points) {
+      if (!points) points = 64
+      var coords = {
+        latitude: center[1],
+        longitude: center[0]
+      }
+      var km = radiusInKm
+
+      var ret = []
+      var distanceX = km / (111.320 * Math.cos(coords.latitude * Math.PI / 180))
+      var distanceY = km / 110.574
+
+      var theta, x, y
+      for (var i = 0; i < points; i++) {
+        theta = (i / points) * (2 * Math.PI)
+        x = distanceX * Math.cos(theta)
+        y = distanceY * Math.sin(theta)
+
+        ret.push([coords.longitude + x, coords.latitude + y])
+      }
+      ret.push(ret[0])
+
+      return {
+        'type': 'geojson',
+        'data': {
+          'type': 'FeatureCollection',
+          'features': [{
+            'type': 'Feature',
+            'geometry': {
+              'type': 'Polygon',
+              'coordinates': [ret]
+            }
+          }]
+        }
+      }
+    },
+
+    drawRoute (geojson) {
+      if (this.map.getLayer('route_complex')) {
+        this.map.getLayer('route_complex').setData(geojson)
+      } else {
+        this.map.addLayer({
+          'id': 'route_complex',
+          'type': 'line',
+          'source': geojson,
+          'paint': {
+            'line-width': 4,
+            'line-color': '#007cbf'
+          }
+        })
+      }
     },
 
     drawDrone () {
@@ -130,14 +245,15 @@ export default {
 
     processRoute () {
       var lineString = turf.lineString([this.origin, this.target])
+      //console.log('Computing line string', lineString)
       // Calculate the distance in kilometers between route start/end point.
-      var lineDistance = turf.lineDistance(lineString, 'kilometers')
-
+      var lineDistance = turf.lineDistance(lineString, 'meters')
+      //console.log('Route distance', lineDistance)
       var arc = []
 
       // Draw an arc between the `origin` & `destination` of the two points
       for (var i = 0; i < lineDistance; i++) {
-        var segment = turf.along(lineString, i / 1000 * lineDistance, 'kilometers')
+        var segment = turf.along(lineString, i / 1000 * lineDistance, 'meters')
         arc.push(segment.geometry.coordinates)
       }
 
@@ -157,11 +273,12 @@ export default {
 
     fitBounds () {
       let coordinates = this.route.features[0].geometry.coordinates
+      // console.log(this.route)
       var bounds = this.route.features[0].geometry.coordinates.reduce(function (bounds, coord) {
         return bounds.extend(coord)
       }, new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]))
       this.map.fitBounds(bounds, {
-        padding: 20
+        padding: 60
       })
     }
   },

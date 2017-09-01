@@ -13,7 +13,7 @@
           <div class="columns two"><i class="ion-alert"></i></div>
           <div class="columns ten">Target out of charge distance.</div>
         </div>
-        <mapbox-flyover ref="map" class="map-current-location shadow-box"></mapbox-flyover>
+        <mapbox-flyover ref="map" :origin="selectedDrone.position" class="map-current-location shadow-box" :radius="7"></mapbox-flyover>
         <div v-if="modalPage === 0">
           <div class="search-wrapper">
             <input type="text"
@@ -43,6 +43,7 @@
 </template>
 
 <script>
+import {PostNewBooking, FakeData} from './dataProvider'
 import MapboxFlyover from './components/UIComponents/MapboxFlyover'
 import DroneHeader from './components/UIComponents/DroneHeader'
 import OxyModal from './components/UIComponents/OxyModal'
@@ -67,11 +68,7 @@ export default {
       selectedDrone: false,
       modalPage: 0,
       location: '',
-      route: [
-        'Starting position',
-        'Charging Stop (~0.0004 ETH)',
-        'Destination'
-      ]
+      route: ['No route data available.']
 
     }
   },
@@ -82,14 +79,24 @@ export default {
 
       switch (this.modalPage) {
         case 1:
-          this.$refs.map.addTarget([-122.114, 37.376])
+          this.route = [
+            'Drone location (' + this.selectedDrone.position[0] + ', ' + this.selectedDrone.position[1] + ')',
+            'Charging Stop (~0.0004 ETH)',
+            'Destination (' + FakeData.destionationLoc[0] + ', ' + FakeData.destionationLoc[1] + ')'
+          ]
+          this.$refs.map.drawRoute(FakeData.route)
+          this.$refs.map.drawPoints(FakeData.points)
+          this.$refs.map.addTarget(FakeData.destionationLoc)
           break
         case 2:
           this.location = ''
-          this.modalPage = 0
-          this.selectedDrone.order = { target: [-120.114, 32.376] }
-          this.$router.push({ path: 'drone/' + this.selectedDrone.id, params: {id: this.selectedDrone.id} })
+          this.modalPage = 3
+          this.selectedDrone.order = { target: FakeData.destionationLoc }
+          this.$refs.map.removeRadius()
           this.showModal = false
+          this.modalPage = 0
+          this.$router.push({ path: 'drone/' + this.selectedDrone.id, params: {id: this.selectedDrone.id} })
+          PostNewBooking(FakeData.drone, FakeData.station, () => {})
       }
     },
     resetModal: function () {
@@ -137,7 +144,7 @@ export default {
     //display: block;
     //position: relative !important;
     width: 100%;
-    height: 220px;
+    height: 400px;
     margin-bottom: 50px;
     canvas {
       position: relative !important;

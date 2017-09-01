@@ -20,6 +20,7 @@ export default {
 <style>
 .modal-mask {
   position: fixed;
+  overflow: scroll;
   z-index: 9998;
   top: 0;
   left: 0;
@@ -57,9 +58,9 @@ export default {
 
 .modal-container {
   position: relative;
-  max-width: 80%;
+  max-width: 60%;
   min-height: 300px;
-  width: 50%;
+  /* width: 50%; */
   margin: 0px auto;
   padding: 7px;
   /* // background-color: #fff;
